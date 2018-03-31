@@ -1,0 +1,579 @@
+#!/usr/bin/env python
+
+# Doxyman2md
+#
+# URL:      https://github.com/d99kris/doxyman2md
+# Version:  1.0
+#
+# Copyright (C) 2018 Kristofer Berggren
+# All rights reserved.
+#
+# Doxyman2md is distributed under the MIT license, see LICENSE for details.
+
+import os
+import re
+import shutil
+import sys
+import tempfile
+
+# Generate man-page API documentation using Doxygen
+def gen_man(src_dir, tmp_dir):
+    man_dir = tmp_dir + "/man/man3"
+    doxyfile_path = tmp_dir + "/Doxyfile"
+
+    # Write temporary Doxyfile based on template in doxyfile_content and the dynamic data;
+    # user-specified input directory, and temporary man-dir.
+    with open(doxyfile_path, "w") as out:
+        global doxyfile_content
+        out.write(doxyfile_content)
+        out.write("INPUT                  = " + src_dir + "\n")
+        out.write("MAN_OUTPUT             = " + tmp_dir + "/man\n")
+
+    # Run Doxygen and check result
+    if os.system("doxygen " + doxyfile_path + " > /dev/null") == 0 and os.listdir(man_dir) != []:
+        return True
+    else:
+        print("doxyman2md: doxygen failed to generate documentation, exiting.")
+        return False
+
+
+# Convert a single file man-page API documentation to MD (MarkDown)
+def man2md(inmanpath, outmdpath, append):
+    # Open man-page input file
+    infile = open(inmanpath, "r")
+
+    # Open output file, in append mode if the file already exists and append is allowed
+    outfile = open(outmdpath, "a" if append and os.path.isfile(outmdpath) else "w")
+
+    # Stores current class name (with namespace prefix)
+    class_name = ""
+
+    # Stores current namespace name
+    namespace_name = ""
+
+    # Dictionary tracking currently active .SH, .SH and \fb section
+    section = {}
+    section[".SH"] = ""
+    section[".SS"] = ""
+    section["\\fb"] = ""
+
+    # Dictionary tracking if a specific (uniquely named) section has been entered before
+    namedsection_entered = {}
+
+    # Iterate over input file lines
+    for rawline in infile:
+        # Strip \& chars and trailing linebreaks.
+        line = rawline.rstrip("\n").replace("\\&", "")
+
+        # Skip empty lines
+        if not line:
+            continue
+
+        # Skip .PP, .RS and .RE lines
+        if (line.startswith(".PP") or line.startswith(".RS") or line.startswith(".RE") or
+            line.startswith(".br")):
+            continue
+
+        # Handle .SH section
+        if line.startswith(".SH"):
+            # Store .SH section name
+            section[".SH"] = line[4:]
+            # Reset subsection .SS name
+            section[".SS"] = ""
+            # For the last .SH (Author) insert a horizontal rule
+            if section[".SH"] == "\"Author\"":
+                outfile.write("\n")
+                outfile.write("---\n")
+                outfile.write("\n")
+
+            continue
+
+        # Handle .SS section
+        if line.startswith(".SS"):
+            # Use a temporary variable
+            tmpline = line[4:]
+            # Drop \fB, \fC and \fP tags
+            tmpline = tmpline.replace("\\fB", "").replace("\\fC", "").replace("\\fP", "")
+            # Remove namespace::classname prefix
+            tmpline = tmpline.replace(class_name + "::", "")[1:-1]
+            # Remove namespace:: if still present (this handles specialized templated funcs)
+            tmpline = tmpline.replace(namespace_name + "::", "")
+            # Drop tags after last closing parenthesis
+            tmpline = tmpline[:tmpline.rfind(")") + 1]
+            section[".SS"] = tmpline
+            
+            # Only process .SS in the following two sections
+            if (section[".SH"] == "\"Constructor & Destructor Documentation\"" or
+                section[".SH"] == "\"Member Function Documentation\""):
+                section["\\fb"] = "Description"
+                # Horizontal ruler
+                outfile.write("\n")
+                outfile.write("---\n")
+                outfile.write("\n")
+                # Function name / prototype syntax-highlighted
+                outfile.write("```c++\n")
+                outfile.write(section[".SS"] + "\n")
+                outfile.write("```\n")
+            continue
+
+        # Handle .SH section NAME
+        if section[".SH"] == "NAME":
+            # Only process first line in the .SH section NAME
+            key = ".SH" + "#" + "NAME"
+            if not key in namedsection_entered:
+                namedsection_entered[key] = True
+                # Extract class name and description
+                class_name = line.split("-")[0].replace("\\", "").rstrip()
+                class_desc = "-".join(line.split("-")[1:])[1:]
+                class_desc = class_desc.replace("\\fB", "").replace("\\fP", "")
+                # Extract namespace
+                if class_name.rfind("::") != -1:
+                    namespace_name = class_name[:class_name.rfind("::")]
+                # Class name heading
+                outfile.write("## class " + class_name + "\n\n")
+                # Class description plain text
+                outfile.write(class_desc + "\n")
+            continue
+
+        # Handle .SH sections for ctor/dtor and detailed function documentation
+        if (section[".SH"] == "\"Constructor & Destructor Documentation\"" or
+            section[".SH"] == "\"Member Function Documentation\""):
+            # Remove bold formatting markers
+            line_nb = line.replace("\\fB", "").replace("\\fP", "")
+
+            # Create a bold header for Parameters
+            if line == "\\fBParameters:\\fP":
+                section["\\fb"] = line_nb
+                outfile.write("\n")
+                outfile.write("**Parameters**\n")
+                continue
+
+            # Create a bold header for Returns
+            if line == "\\fBReturns:\\fP":
+                section["\\fb"] = line_nb
+                outfile.write("\n")
+                outfile.write("**Returns:**\n")
+                continue
+
+            # Output plain text in the (virtual/unnamed) Description section 
+            if section["\\fb"] == "Description":
+                outfile.write(line_nb + "\n")
+                continue
+
+            # All other text is treated as bullet list items under Parameters/Returns sections
+            outfile.write("- ")
+            if line_nb.find("\\fI") > -1:
+                # Parameter names syntax highlighted
+                outfile.write("`")
+                outfile.write(re.search("\\\\fI[^ ]+", line_nb).group(0).replace("\\fI", ""))
+                outfile.write("`")
+                outfile.write(re.sub("\\\\fI[^ ]+", "", line_nb))
+                outfile.write("\n")
+            else:
+                # Plain text output
+                outfile.write(line_nb + "\n")
+
+
+# Main
+def main():
+    # Process arguments
+    if len(sys.argv) <= 2:
+        print("usage: doxyman2md <srcdir> <outdir|outfile> [mandir]")
+        sys.exit(1)
+
+    # Set source dir and output paths (may be either dir or file)
+    src_dir = sys.argv[1]
+    out_path = sys.argv[2]
+    man_out = sys.argv[3] if len(sys.argv) == 4 else ""
+
+    # Create working tmp dir
+    tmp_dir = tempfile.mkdtemp()
+
+    # Call gen_man to generate man-page API documentation
+    if not gen_man(src_dir, tmp_dir):
+        shutil.rmtree(tmp_dir)
+        sys.exit(1)
+
+    # If output path is not a dir, and is an existing file, then delete it.
+    if (not os.path.isdir(out_path)) and os.path.isfile(out_path):
+        os.remove(out_path)
+
+    # Footer text
+    footer = ("###### API documentation generated using " +
+              "[Doxyman2md](https://github.com/d99kris/doxyman2md)\n\n")
+
+    # List generated man pages
+    man_dir = tmp_dir + "/man/man3"
+    mans = os.listdir(man_dir)
+
+    # Create index page
+    if os.path.isdir(out_path):
+        index_path = out_path + "/README.md"
+        with open(index_path, "w") as out:
+            out.write("# API Documentation\n")
+    
+    # Iterate through man pages
+    for man in mans:
+        if not man.startswith("_"):
+            if os.path.isdir(out_path):
+                # When output to multiple files, name the files based on source man-page name
+                out_name = os.path.splitext(man)[0] + ".md"
+                out_file = out_path + "/" + out_name
+            else:
+                # When output to single file, just use that filename
+                out_file = out_path
+
+            # Convert a single man-page to MD representation
+            append = not os.path.isdir(out_path)
+            man2md(man_dir + "/" + man, out_file, append)
+
+            # When output to multiple files
+            if os.path.isdir(out_path):
+                # Add link to index page
+                with open(out_file) as infile:
+                    first_line = infile.readline()
+                    class_name = first_line.replace("#", "").lstrip().rstrip("\n")
+                with open(index_path, "a") as outfile:
+                    outfile.write(" - [" + class_name + "](" + out_name + ")\n")
+                
+                # Add the footer to each file
+                with open(out_file, "a") as outfile:
+                    outfile.write(footer)
+
+            # Copy man-page to output dir if requested
+            if man_out:
+                shutil.copy(man_dir + "/" + man, man_out + "/" + man)
+
+    # When output to single file, add the footer only at the end of processing all input files
+    if not os.path.isdir(out_path):
+        with open(out_path, "a") as out:
+            out.write(footer)
+
+    # Delete tmp working dir
+    shutil.rmtree(tmp_dir)
+
+
+# Doxyfile template
+doxyfile_content = """
+# Doxyfile 1.8.13
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "ProjectName"
+PROJECT_NUMBER         =
+PROJECT_BRIEF          =
+PROJECT_LOGO           =
+OUTPUT_DIRECTORY       =
+CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = NO
+OUTPUT_LANGUAGE        = English
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ABBREVIATE_BRIEF       = "The $name class" \\
+                         "The $name widget" \\
+                         "The $name file" \\
+                         is \\
+                         provides \\
+                         specifies \\
+                         contains \\
+                         represents \\
+                         a \\
+                         an \\
+                         the
+ALWAYS_DETAILED_SEC    = NO
+INLINE_INHERITED_MEMB  = NO
+FULL_PATH_NAMES        = YES
+STRIP_FROM_PATH        =
+STRIP_FROM_INC_PATH    =
+SHORT_NAMES            = NO
+JAVADOC_AUTOBRIEF      = NO
+QT_AUTOBRIEF           = NO
+MULTILINE_CPP_IS_BRIEF = NO
+INHERIT_DOCS           = YES
+SEPARATE_MEMBER_PAGES  = NO
+TAB_SIZE               = 4
+ALIASES                =
+TCL_SUBST              =
+OPTIMIZE_OUTPUT_FOR_C  = NO
+OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_FOR_FORTRAN   = NO
+OPTIMIZE_OUTPUT_VHDL   = NO
+EXTENSION_MAPPING      =
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+BUILTIN_STL_SUPPORT    = NO
+CPP_CLI_SUPPORT        = NO
+SIP_SUPPORT            = NO
+IDL_PROPERTY_SUPPORT   = YES
+DISTRIBUTE_GROUP_DOC   = NO
+GROUP_NESTED_COMPOUNDS = NO
+SUBGROUPING            = YES
+INLINE_GROUPED_CLASSES = NO
+INLINE_SIMPLE_STRUCTS  = NO
+TYPEDEF_HIDES_STRUCT   = NO
+LOOKUP_CACHE_SIZE      = 0
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_PACKAGE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_ANON_NSPACES   = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+HIDE_COMPOUND_REFERENCE= NO
+SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC  = NO
+FORCE_LOCAL_INCLUDES   = NO
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_MEMBERS_CTORS_1ST = NO
+SORT_GROUP_NAMES       = NO
+SORT_BY_SCOPE_NAME     = NO
+STRICT_PROTO_MATCHING  = NO
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+GENERATE_BUGLIST       = YES
+GENERATE_DEPRECATEDLIST= YES
+ENABLED_SECTIONS       =
+MAX_INITIALIZER_LINES  = 30
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+FILE_VERSION_FILTER    =
+LAYOUT_FILE            =
+CITE_BIB_FILES         =
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+WARN_AS_ERROR          = NO
+WARN_FORMAT            = "$file:$line: $text"
+WARN_LOGFILE           =
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.c \\
+                         *.cc \\
+                         *.cxx \\
+                         *.cpp \\
+                         *.c++ \\
+                         *.java \\
+                         *.ii \\
+                         *.ixx \\
+                         *.ipp \\
+                         *.i++ \\
+                         *.inl \\
+                         *.idl \\
+                         *.ddl \\
+                         *.odl \\
+                         *.h \\
+                         *.hh \\
+                         *.hxx \\
+                         *.hpp \\
+                         *.h++ \\
+                         *.cs \\
+                         *.d \\
+                         *.php \\
+                         *.php4 \\
+                         *.php5 \\
+                         *.phtml \\
+                         *.inc \\
+                         *.m \\
+                         *.markdown \\
+                         *.md \\
+                         *.mm \\
+                         *.dox \\
+                         *.py \\
+                         *.pyw \\
+                         *.f90 \\
+                         *.f95 \\
+                         *.f03 \\
+                         *.f08 \\
+                         *.f \\
+                         *.for \\
+                         *.tcl \\
+                         *.vhd \\
+                         *.vhdl \\
+                         *.ucf \\
+                         *.qsf
+RECURSIVE              = NO
+EXCLUDE                =
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       =
+EXCLUDE_SYMBOLS        =
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       = *
+EXAMPLE_RECURSIVE      = NO
+IMAGE_PATH             =
+INPUT_FILTER           =
+FILTER_PATTERNS        =
+FILTER_SOURCE_FILES    = NO
+FILTER_SOURCE_PATTERNS =
+USE_MDFILE_AS_MAINPAGE =
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
+REFERENCES_LINK_SOURCE = YES
+SOURCE_TOOLTIPS        = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = YES
+CLANG_ASSISTED_PARSING = NO
+CLANG_OPTIONS          =
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+IGNORE_PREFIX          =
+GENERATE_HTML          = NO
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_HEADER            =
+HTML_FOOTER            =
+HTML_STYLESHEET        =
+HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_FILES       =
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+HTML_TIMESTAMP         = NO
+HTML_DYNAMIC_SECTIONS  = NO
+HTML_INDEX_NUM_ENTRIES = 100
+GENERATE_DOCSET        = NO
+DOCSET_FEEDNAME        = "Doxygen generated docs"
+DOCSET_BUNDLE_ID       = org.doxygen.Project
+DOCSET_PUBLISHER_ID    = org.doxygen.Publisher
+DOCSET_PUBLISHER_NAME  = Publisher
+GENERATE_HTMLHELP      = NO
+CHM_FILE               =
+HHC_LOCATION           =
+GENERATE_CHI           = NO
+CHM_INDEX_ENCODING     =
+BINARY_TOC             = NO
+TOC_EXPAND             = NO
+GENERATE_QHP           = NO
+QCH_FILE               =
+QHP_NAMESPACE          = org.doxygen.Project
+QHP_VIRTUAL_FOLDER     = doc
+QHP_CUST_FILTER_NAME   =
+QHP_CUST_FILTER_ATTRS  =
+QHP_SECT_FILTER_ATTRS  =
+QHG_LOCATION           =
+GENERATE_ECLIPSEHELP   = NO
+ECLIPSE_DOC_ID         = org.doxygen.Project
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = NO
+ENUM_VALUES_PER_LINE   = 4
+TREEVIEW_WIDTH         = 250
+EXT_LINKS_IN_WINDOW    = NO
+FORMULA_FONTSIZE       = 10
+FORMULA_TRANSPARENT    = YES
+USE_MATHJAX            = NO
+MATHJAX_FORMAT         = HTML-CSS
+MATHJAX_RELPATH        = http://cdn.mathjax.org/mathjax/latest
+MATHJAX_EXTENSIONS     =
+MATHJAX_CODEFILE       =
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+EXTERNAL_SEARCH        = NO
+SEARCHENGINE_URL       =
+SEARCHDATA_FILE        = searchdata.xml
+EXTERNAL_SEARCH_ID     =
+EXTRA_SEARCH_MAPPINGS  =
+GENERATE_LATEX         = NO
+LATEX_OUTPUT           = latex
+LATEX_CMD_NAME         = latex
+MAKEINDEX_CMD_NAME     = makeindex
+COMPACT_LATEX          = NO
+PAPER_TYPE             = a4
+EXTRA_PACKAGES         =
+LATEX_HEADER           =
+LATEX_FOOTER           =
+LATEX_EXTRA_STYLESHEET =
+LATEX_EXTRA_FILES      =
+PDF_HYPERLINKS         = YES
+USE_PDFLATEX           = YES
+LATEX_BATCHMODE        = NO
+LATEX_HIDE_INDICES     = NO
+LATEX_SOURCE_CODE      = NO
+LATEX_BIB_STYLE        = plain
+LATEX_TIMESTAMP        = NO
+GENERATE_RTF           = NO
+RTF_OUTPUT             = rtf
+COMPACT_RTF            = NO
+RTF_HYPERLINKS         = NO
+RTF_STYLESHEET_FILE    =
+RTF_EXTENSIONS_FILE    =
+RTF_SOURCE_CODE        = NO
+GENERATE_MAN           = YES
+MAN_EXTENSION          = .3
+MAN_SUBDIR             =
+MAN_LINKS              = NO
+GENERATE_XML           = NO
+XML_OUTPUT             = xml
+XML_PROGRAMLISTING     = YES
+GENERATE_DOCBOOK       = NO
+DOCBOOK_OUTPUT         = docbook
+DOCBOOK_PROGRAMLISTING = NO
+GENERATE_AUTOGEN_DEF   = NO
+GENERATE_PERLMOD       = NO
+PERLMOD_LATEX          = NO
+PERLMOD_PRETTY         = YES
+PERLMOD_MAKEVAR_PREFIX =
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+EXPAND_ONLY_PREDEF     = NO
+SEARCH_INCLUDES        = YES
+INCLUDE_PATH           =
+INCLUDE_FILE_PATTERNS  =
+PREDEFINED             =
+EXPAND_AS_DEFINED      =
+SKIP_FUNCTION_MACROS   = YES
+TAGFILES               =
+GENERATE_TAGFILE       =
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = YES
+EXTERNAL_PAGES         = YES
+PERL_PATH              = /usr/bin/perl
+CLASS_DIAGRAMS         = YES
+MSCGEN_PATH            =
+DIA_PATH               =
+HIDE_UNDOC_RELATIONS   = YES
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 0
+DOT_FONTNAME           = Helvetica
+DOT_FONTSIZE           = 10
+DOT_FONTPATH           =
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+UML_LOOK               = NO
+UML_LIMIT_NUM_FIELDS   = 10
+TEMPLATE_RELATIONS     = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+DOT_IMAGE_FORMAT       = png
+INTERACTIVE_SVG        = NO
+DOT_PATH               =
+DOTFILE_DIRS           =
+MSCFILE_DIRS           =
+DIAFILE_DIRS           =
+PLANTUML_JAR_PATH      =
+PLANTUML_INCLUDE_PATH  =
+DOT_GRAPH_MAX_NODES    = 50
+MAX_DOT_GRAPH_DEPTH    = 0
+DOT_TRANSPARENT        = NO
+DOT_MULTI_TARGETS      = NO
+GENERATE_LEGEND        = YES
+DOT_CLEANUP            = YES
+"""
+
+if __name__ == "__main__":
+    main()
