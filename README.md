@@ -3,7 +3,7 @@ A simple tool generating markdown API documentation from source code. It utilize
 to generate man-page API documentation, and then converts the man-page documentation to markdown.
 
 This project is a work-in-progress. Currently known supported language is C++.
-Please see the [Rapidcsv](https://github.com/d99kris/rapidcsv) project for an example usage.
+Please see the [Rapidcsv](https://github.com/d99kris/rapidcsv/doc) project for an example usage.
 
 # Supported Languages
 - C++
