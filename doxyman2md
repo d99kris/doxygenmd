@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Doxyman2md
 #
 # URL:      https://github.com/d99kris/doxyman2md
-# Version:  1.01
+# Version:  1.02
 #
-# Copyright (C) 2018 Kristofer Berggren
+# Copyright (C) 2018-2020 Kristofer Berggren
 # All rights reserved.
 #
 # Doxyman2md is distributed under the MIT license, see LICENSE for details.
@@ -537,9 +537,7 @@ GENERATE_TAGFILE       =
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = YES
 EXTERNAL_PAGES         = YES
-PERL_PATH              = /usr/bin/perl
 CLASS_DIAGRAMS         = YES
-MSCGEN_PATH            =
 DIA_PATH               =
 HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = YES
