@@ -1,20 +1,55 @@
 #!/usr/bin/env python3
 
-# Doxyman2md
+# doxygenmd
 #
-# URL:      https://github.com/d99kris/doxyman2md
-# Version:  1.02
-#
-# Copyright (C) 2018-2020 Kristofer Berggren
+# Copyright (C) 2020 Kristofer Berggren
 # All rights reserved.
 #
-# Doxyman2md is distributed under the MIT license, see LICENSE for details.
+# doxygenmd is distributed under the GPLv2 license, see LICENSE for details.
 
 import os
 import re
 import shutil
 import sys
 import tempfile
+
+version = "1.11"
+script_dir = os.path.dirname(os.path.realpath(__file__))
+doxygen_path = script_dir + "/../share/doxygenmd/bin/doxygen"
+
+# Help
+def show_help():
+    print("Doxygenmd is a simple tool for generating markdown API documentation")
+    print("from source code. Supported languages: C++")
+    print("")
+    print("Usage: doxygenmd <SRCDIR> <DOCDIR|DOCFILE> [MANDIR]")
+    print("   or: doxygenmd --help")
+    print("   or: doxygenmd --version")
+    print("")
+    print("Options:")
+    print("   SRCDIR            source code directory")
+    print("   DOCDIR            output directory for markdown files")
+    print("   DOCFILE           output file for markdown single file")
+    print("   MANDIR            output directory for interim man-files")
+    print("   -h, --help        display this help and exit")
+    print("   -v, --version     output version information and exit")
+    print("")
+    print("Examples:")
+    print("   doxygenmd src doc")
+    print("")
+    print("Report bugs at https://github.com/d99kris/doxygenmd")
+    print("")
+    
+# Version
+def show_version():
+    print("doxygenmd v" + version)
+    print("")
+    print("Copyright (C) 2020 Kristofer Berggren")
+    print("This is free software; see the source for copying")
+    print("conditions. There is NO warranty; not even for")
+    print("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.")
+    print("")
+    print("Written by Kristofer Berggren.")
 
 # Generate man-page API documentation using Doxygen
 def gen_man(src_dir, tmp_dir):
@@ -30,10 +65,10 @@ def gen_man(src_dir, tmp_dir):
         out.write("MAN_OUTPUT             = " + tmp_dir + "/man\n")
 
     # Run Doxygen and check result
-    if os.system("doxygen " + doxyfile_path + " > /dev/null") == 0 and os.listdir(man_dir) != []:
+    if os.system(doxygen_path + " " + doxyfile_path + " > /dev/null") == 0 and os.listdir(man_dir) != []:
         return True
     else:
-        print("doxyman2md: doxygen failed to generate documentation, exiting.")
+        print("doxygenmd: doxygen failed to generate documentation, exiting.")
         return False
 
 
@@ -177,8 +212,14 @@ def man2md(inmanpath, outmdpath, append):
 # Main
 def main():
     # Process arguments
-    if len(sys.argv) <= 2:
-        print("usage: doxyman2md <srcdir> <outdir|outfile> [mandir]")
+    if (len(sys.argv) == 2) and ((sys.argv[1] == "--help") or (sys.argv[1] == "-h")):
+        show_help()
+        sys.exit(0)
+    elif (len(sys.argv) == 2) and ((sys.argv[1] == "--version") or (sys.argv[1] == "-v")):
+        show_version()
+        sys.exit(0)
+    elif len(sys.argv) <= 2:
+        show_help()
         sys.exit(1)
 
     # Set source dir and output paths (may be either dir or file)
@@ -200,7 +241,7 @@ def main():
 
     # Footer text
     footer = ("###### API documentation generated using " +
-              "[Doxyman2md](https://github.com/d99kris/doxyman2md)\n\n")
+              "[Doxygenmd](https://github.com/d99kris/doxygenmd)\n\n")
 
     # List generated man pages
     man_dir = tmp_dir + "/man/man3"
@@ -423,8 +464,6 @@ REFERENCES_LINK_SOURCE = YES
 SOURCE_TOOLTIPS        = YES
 USE_HTAGS              = NO
 VERBATIM_HEADERS       = YES
-CLANG_ASSISTED_PARSING = NO
-CLANG_OPTIONS          =
 ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 5
 IGNORE_PREFIX          =
