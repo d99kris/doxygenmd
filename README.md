@@ -5,7 +5,7 @@ Doxygenmd
 |-----------------|
 | [![Build status](https://travis-ci.com/d99kris/doxygenmd.svg?branch=master)](https://travis-ci.com/d99kris/doxygenmd) |
 
-Doxygenmd is a light-weight tool for generating markdown API documentation
+Doxygenmd is a simple tool for generating markdown API documentation
 from source code.
 
 Supported languages: C++
