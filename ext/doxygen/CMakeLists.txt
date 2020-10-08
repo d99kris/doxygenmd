@@ -26,9 +26,16 @@ option(win_static      "Link with /MT in stead of /MD on windows" OFF)
 option(english_only    "Only compile in support for the English language" OFF)
 option(force_qt4       "Forces doxywizard to build using Qt4 even if Qt5 is installed" OFF)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-set(TOP "${CMAKE_SOURCE_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+set(TOP "${PROJECT_SOURCE_DIR}")
 include(version)
+
+# Ccache
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message(STATUS "Found ccache")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
 
 set(sqlite3  "0" CACHE INTERNAL "used in settings.h")
 set(clang    "0" CACHE INTERNAL "used in settings.h")
@@ -56,7 +63,7 @@ endif()
 if (WIN32)
     if (NOT CMAKE_GENERATOR MATCHES "MinGW Makefiles")
         if (NOT ICONV_DIR)
-          set(ICONV_DIR "${CMAKE_SOURCE_DIR}/winbuild")
+          set(ICONV_DIR "${PROJECT_SOURCE_DIR}/winbuild")
         endif()
         set(CMAKE_REQUIRED_DEFINITIONS "-DLIBICONV_STATIC")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj") # needed for language.cpp on 64bit
@@ -96,7 +103,7 @@ find_package(Iconv REQUIRED)
 include_directories(${ICONV_INCLUDE_DIR})
 
 
-#set(DOXYDOCS ${CMAKE_SOURCE_DIR}/doc CACHE INTERNAL "Path to doxygen docs")
+#set(DOXYDOCS ${PROJECT_SOURCE_DIR}/doc CACHE INTERNAL "Path to doxygen docs")
 set(DOXYDOCS ${PROJECT_BINARY_DIR}/doc)
 set(ENV{DOXYGEN_DOCDIR} ${DOXYDOCS})
 set(GENERATED_SRC "${CMAKE_BINARY_DIR}/generated_src" CACHE INTERNAL "Stores generated files")
@@ -111,7 +118,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${EXECUTABLE_OUTPUT_PATH})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${EXECUTABLE_OUTPUT_PATH})
 
 # gather lang codes for translation
-file(GLOB lang_files RELATIVE "${CMAKE_SOURCE_DIR}/src" "${CMAKE_SOURCE_DIR}/src/translator_??.h")
+file(GLOB lang_files RELATIVE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/src/translator_??.h")
 if (english_only) # user only wants English
   set(lcodes "ENONLY")
 else ()

@@ -6,7 +6,7 @@ if (WIN32)
 endif()
 
 include_directories(
-	${CMAKE_SOURCE_DIR}/qtools
+	${PROJECT_SOURCE_DIR}/qtools
 	${XAPIAN_INCLUDE_DIR}
         ${ZLIB_INCLUDE_DIRS}
 )

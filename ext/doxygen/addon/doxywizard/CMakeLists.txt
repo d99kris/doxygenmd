@@ -30,8 +30,8 @@ endif()
 
 include_directories(
 	.
-	${CMAKE_SOURCE_DIR}/src
-	${CMAKE_SOURCE_DIR}/qtools
+	${PROJECT_SOURCE_DIR}/src
+	${PROJECT_SOURCE_DIR}/qtools
 	${GENERATED_SRC}
 )
 
@@ -64,7 +64,7 @@ set_source_files_properties(${GENERATED_SRC_WIZARD}/version.cpp PROPERTIES GENER
 
 # generate configdoc.cpp
 add_custom_command(
-COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/src/configgen.py -wiz ${CMAKE_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC_WIZARD}/configdoc.cpp
+COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -wiz ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC_WIZARD}/configdoc.cpp
 OUTPUT ${GENERATED_SRC_WIZARD}/configdoc.cpp
 )
 set_source_files_properties(${GENERATED_SRC_WIZARD}/configdoc.cpp PROPERTIES GENERATED 1)

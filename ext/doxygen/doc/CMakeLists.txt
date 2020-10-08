@@ -110,23 +110,23 @@ file(COPY ${LANG_FILES}                   DESTINATION ${PROJECT_BINARY_DIR}/src/
 
 foreach (f  ${DOC_FILES})
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/doc/${f}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/doc/${f} ${PROJECT_BINARY_DIR}/doc/
-    DEPENDS ${CMAKE_SOURCE_DIR}/doc/${f}
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/doc/${f} ${PROJECT_BINARY_DIR}/doc/
+    DEPENDS ${PROJECT_SOURCE_DIR}/doc/${f}
     )
 set_source_files_properties(${PROJECT_BINARY_DIR}/doc/${f} PROPERTIES GENERATED 1)
 list(APPEND OUT_DOC_FILES "${PROJECT_BINARY_DIR}/doc/${f}")
 endforeach()
 
-configure_file(${CMAKE_SOURCE_DIR}/doc/manual.sty         ${PROJECT_BINARY_DIR}/doc/manual.sty)
-configure_file(${CMAKE_SOURCE_DIR}/doc/doxygen_manual.tex ${PROJECT_BINARY_DIR}/doc/doxygen_manual.tex)
-configure_file(${CMAKE_SOURCE_DIR}/doc/doxygen.1          ${PROJECT_BINARY_DIR}/man/doxygen.1)
-configure_file(${CMAKE_SOURCE_DIR}/doc/doxywizard.1       ${PROJECT_BINARY_DIR}/man/doxywizard.1)
-configure_file(${CMAKE_SOURCE_DIR}/doc/doxysearch.1       ${PROJECT_BINARY_DIR}/man/doxysearch.1)
-configure_file(${CMAKE_SOURCE_DIR}/doc/doxyindexer.1      ${PROJECT_BINARY_DIR}/man/doxyindexer.1)
+configure_file(${PROJECT_SOURCE_DIR}/doc/manual.sty         ${PROJECT_BINARY_DIR}/doc/manual.sty)
+configure_file(${PROJECT_SOURCE_DIR}/doc/doxygen_manual.tex ${PROJECT_BINARY_DIR}/doc/doxygen_manual.tex)
+configure_file(${PROJECT_SOURCE_DIR}/doc/doxygen.1          ${PROJECT_BINARY_DIR}/man/doxygen.1)
+configure_file(${PROJECT_SOURCE_DIR}/doc/doxywizard.1       ${PROJECT_BINARY_DIR}/man/doxywizard.1)
+configure_file(${PROJECT_SOURCE_DIR}/doc/doxysearch.1       ${PROJECT_BINARY_DIR}/man/doxysearch.1)
+configure_file(${PROJECT_SOURCE_DIR}/doc/doxyindexer.1      ${PROJECT_BINARY_DIR}/man/doxyindexer.1)
 
 # doc/language.doc (see tag Doxyfile:INPUT)
 add_custom_command(
-        COMMAND ${PYTHON_EXECUTABLE} translator.py ${CMAKE_SOURCE_DIR}
+        COMMAND ${PYTHON_EXECUTABLE} translator.py ${PROJECT_SOURCE_DIR}
         DEPENDS ${PROJECT_BINARY_DIR}/doc/maintainers.txt ${PROJECT_BINARY_DIR}/doc/language.tpl ${PROJECT_BINARY_DIR}/doc/translator.py
         OUTPUT language.doc
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/doc
@@ -157,7 +157,7 @@ add_custom_target(doxygen_pdf
         COMMAND ${CMAKE_COMMAND} -E remove refman.tex
         COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/doc/doxygen_manual.tex  .
         COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/doc/manual.sty  .
-        COMMAND ${EPSTOPDF} ${CMAKE_SOURCE_DIR}/doc/doxygen_logo.eps --outfile=doxygen_logo.pdf
+        COMMAND ${EPSTOPDF} ${PROJECT_SOURCE_DIR}/doc/doxygen_logo.eps --outfile=doxygen_logo.pdf
         COMMAND ${PDFLATEX}  -shell-escape doxygen_manual.tex
         COMMAND ${MAKEINDEX} doxygen_manual.idx
         COMMAND ${PDFLATEX}  -shell-escape doxygen_manual.tex
@@ -165,8 +165,8 @@ add_custom_target(doxygen_pdf
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/latex
 )
 add_custom_target(docs
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/doc/doxygen_logo.gif      ${PROJECT_BINARY_HTML_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/doc/doxygen_logo_low.gif  ${PROJECT_BINARY_HTML_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/doc/doxygen_logo.gif      ${PROJECT_BINARY_HTML_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/doc/doxygen_logo_low.gif  ${PROJECT_BINARY_HTML_DIR}
         DEPENDS ${PROJECT_BINARY_DIR}/man/doxygen.1
                 ${PROJECT_BINARY_DIR}/man/doxywizard.1
                 ${PROJECT_BINARY_DIR}/man/doxysearch.1
