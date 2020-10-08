@@ -1,0 +1,25 @@
+language:
+  - cpp
+
+os:
+  - linux
+  - osx
+
+addons:
+  apt:
+    packages:
+      - bison
+      - flex
+  homebrew:
+    packages:
+      - bison
+      - flex
+    update: true
+
+script:
+  - mkdir -p build
+  - cd build
+  - cmake ..
+  - make -s
+  - ctest --output-on-failure
+
