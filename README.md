@@ -71,10 +71,15 @@ macOS
 
 Technical Details
 =================
-Doxygenmd is implemented in Python. Its source tree includes the source code of the 
-following third-party libraries:
+Doxygenmd is implemented in Python. It uses Doxygen to parse source code
+and generate man-pages, which it subsequently processes and converts into
+Markdown.
+
+The source tree includes the source code of the following third-party
+softwares:
 
 - [Doxygen](https://github.com/doxygen/doxygen) - GPLv2 License
+  Copyright (C) by Dimitri van Heesch
 
 
 License
