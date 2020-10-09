@@ -78,8 +78,7 @@ Markdown.
 The source tree includes the source code of the following third-party
 softwares:
 
-- [Doxygen](https://github.com/doxygen/doxygen) - GPLv2 License
-  Copyright (C) by Dimitri van Heesch
+- [Doxygen](https://github.com/doxygen/doxygen) - GPLv2 License - Copyright (C) by Dimitri van Heesch
 
 
 License
