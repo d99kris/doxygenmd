@@ -1,9 +1,9 @@
 Doxygenmd
 =========
 
-| **Linux + Mac** |
-|-----------------|
-| [![Build status](https://travis-ci.com/d99kris/doxygenmd.svg?branch=master)](https://travis-ci.com/d99kris/doxygenmd) |
+| **Linux** | **Mac** |
+|-----------|---------|
+| [![Linux](https://github.com/d99kris/doxygenmd/workflows/Linux/badge.svg)](https://github.com/d99kris/doxygenmd/actions?query=workflow%3ALinux) | [![macOS](https://github.com/d99kris/doxygenmd/workflows/macOS/badge.svg)](https://github.com/d99kris/doxygenmd/actions?query=workflow%3AmacOS) |
 
 Doxygenmd is a simple tool for generating markdown API documentation
 from source code.
