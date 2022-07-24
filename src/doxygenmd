@@ -44,7 +44,7 @@ def show_help():
 def show_version():
     print("doxygenmd v" + version)
     print("")
-    print("Copyright (C) 2020 Kristofer Berggren")
+    print("Copyright (C) 2020-2022 Kristofer Berggren")
     print("This is free software; see the source for copying")
     print("conditions. There is NO warranty; not even for")
     print("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.")
