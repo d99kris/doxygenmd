@@ -13,7 +13,7 @@ import shutil
 import sys
 import tempfile
 
-version = "1.13"
+version = "1.14"
 script_dir = os.path.dirname(os.path.realpath(__file__))
 doxygen_path = script_dir + "/../share/doxygenmd/bin/doxygen"
 
@@ -135,8 +135,10 @@ def man2md(inmanpath, outmdpath, append):
             tmpline = tmpline.replace(namespace_name + "::", "")
             # Drop tags after last closing parenthesis
             tmpline = tmpline[:tmpline.rfind(")") + 1]
+            # Drop backslash
+            tmpline = tmpline.replace("\\", "")
             section[".SS"] = tmpline
-            
+
             # Only process .SS in the following two sections
             if (section[".SH"] == "\"Constructor & Destructor Documentation\"" or
                 section[".SH"] == "\"Member Function Documentation\""):
