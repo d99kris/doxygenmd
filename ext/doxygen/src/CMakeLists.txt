@@ -38,7 +38,7 @@ set_source_files_properties(${GENERATED_SRC}/version.cpp PROPERTIES GENERATED 1)
 
 # configvalues.h
 add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
     OUTPUT ${GENERATED_SRC}/configvalues.h
 )
@@ -46,7 +46,7 @@ set_source_files_properties(${GENERATED_SRC}/configvalues.h PROPERTIES GENERATED
 
 # configvalues.cpp
 add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maps ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.cpp
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maps ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.cpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
     OUTPUT ${GENERATED_SRC}/configvalues.cpp
 )
@@ -54,7 +54,7 @@ set_source_files_properties(${GENERATED_SRC}/configvalues.cpp PROPERTIES GENERAT
 
 # configoptions.cpp
 add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -cpp ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configoptions.cpp
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -cpp ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configoptions.cpp
     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
     OUTPUT ${GENERATED_SRC}/configoptions.cpp
 )
@@ -85,7 +85,7 @@ file(GLOB RESOURCES ${PROJECT_SOURCE_DIR}/templates/*/*)
 # resources.cpp
 add_custom_command(
     COMMENT  "Generating ${GENERATED_SRC}/resources.cpp"
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/res2cc_cmd.py ${PROJECT_SOURCE_DIR}/templates ${GENERATED_SRC}/resources.cpp
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/res2cc_cmd.py ${PROJECT_SOURCE_DIR}/templates ${GENERATED_SRC}/resources.cpp
     DEPENDS ${RESOURCES}
     OUTPUT ${GENERATED_SRC}/resources.cpp
 )
@@ -93,7 +93,7 @@ set_source_files_properties(${GENERATED_SRC}/resources.cpp PROPERTIES GENERATED 
 
 # layout_default.xml
 add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/to_c_cmd.py < ${PROJECT_SOURCE_DIR}/src/layout_default.xml > ${GENERATED_SRC}/layout_default.xml.h
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/to_c_cmd.py < ${PROJECT_SOURCE_DIR}/src/layout_default.xml > ${GENERATED_SRC}/layout_default.xml.h
     DEPENDS ${PROJECT_SOURCE_DIR}/src/layout_default.xml
     OUTPUT  ${GENERATED_SRC}/layout_default.xml.h
 )

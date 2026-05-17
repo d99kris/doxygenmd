@@ -1,6 +1,6 @@
 # configvalues.h
 add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
     OUTPUT ${GENERATED_SRC}/configvalues.h
 )

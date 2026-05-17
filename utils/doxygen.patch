@@ -1,0 +1,409 @@
+diff --git a/ext/doxygen/CMakeLists.txt b/ext/doxygen/CMakeLists.txt
+index 384b20f..d3778d8 100644
+--- a/ext/doxygen/CMakeLists.txt
++++ b/ext/doxygen/CMakeLists.txt
+@@ -11,7 +11,7 @@
+ # Documents produced by Doxygen are derivative works derived from the
+ # input used in their production; they are not affected by this license.
+ 
+-cmake_minimum_required(VERSION 2.8.12)
++cmake_minimum_required(VERSION 3.14...3.22 FATAL_ERROR)
+ project(doxygen)
+ 
+ option(build_wizard    "Build the GUI frontend for doxygen." OFF)
+@@ -87,7 +87,7 @@ else ()
+ endif ()
+ 
+ find_program(DOT NAMES dot)
+-find_package(PythonInterp REQUIRED)
++find_package(Python COMPONENTS Interpreter REQUIRED)
+ find_package(FLEX REQUIRED)
+ find_package(BISON REQUIRED)
+ find_package(Threads)
+@@ -108,7 +108,9 @@ set(DOXYDOCS ${PROJECT_BINARY_DIR}/doc)
+ set(ENV{DOXYGEN_DOCDIR} ${DOXYDOCS})
+ set(GENERATED_SRC "${CMAKE_BINARY_DIR}/generated_src" CACHE INTERNAL "Stores generated files")
+ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
++if(NOT EXECUTABLE_OUTPUT_PATH)
++  set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
++endif()
+ 
+ # place binaries for all build types in the same directory, so we know where to find it
+ # when running tests or generating docs
+diff --git a/ext/doxygen/addon/doxyapp/CMakeLists.txt b/ext/doxygen/addon/doxyapp/CMakeLists.txt
+index 08cf31b..82ffa52 100644
+--- a/ext/doxygen/addon/doxyapp/CMakeLists.txt
++++ b/ext/doxygen/addon/doxyapp/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ # configvalues.h
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configvalues.h
+ )
+diff --git a/ext/doxygen/addon/doxyparse/CMakeLists.txt b/ext/doxygen/addon/doxyparse/CMakeLists.txt
+index 3274594..b98aba2 100644
+--- a/ext/doxygen/addon/doxyparse/CMakeLists.txt
++++ b/ext/doxygen/addon/doxyparse/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ # configvalues.h
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configvalues.h
+ )
+diff --git a/ext/doxygen/addon/doxywizard/CMakeLists.txt b/ext/doxygen/addon/doxywizard/CMakeLists.txt
+index 1ed5414..5e9787a 100644
+--- a/ext/doxygen/addon/doxywizard/CMakeLists.txt
++++ b/ext/doxygen/addon/doxywizard/CMakeLists.txt
+@@ -64,7 +64,7 @@ set_source_files_properties(${GENERATED_SRC_WIZARD}/version.cpp PROPERTIES GENER
+ 
+ # generate configdoc.cpp
+ add_custom_command(
+-COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -wiz ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC_WIZARD}/configdoc.cpp
++COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -wiz ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC_WIZARD}/configdoc.cpp
+ OUTPUT ${GENERATED_SRC_WIZARD}/configdoc.cpp
+ )
+ set_source_files_properties(${GENERATED_SRC_WIZARD}/configdoc.cpp PROPERTIES GENERATED 1)
+diff --git a/ext/doxygen/doc/CMakeLists.txt b/ext/doxygen/doc/CMakeLists.txt
+index c7094ae..63f8768 100644
+--- a/ext/doxygen/doc/CMakeLists.txt
++++ b/ext/doxygen/doc/CMakeLists.txt
+@@ -14,7 +14,7 @@
+ include (${TOP}/cmake/version.cmake)
+ string(TIMESTAMP DATE "%d-%m-%Y")
+ 
+-find_package(PythonInterp REQUIRED)
++find_package(Python COMPONENTS Interpreter REQUIRED)
+ find_program(EPSTOPDF NAMES epstopdf )
+ find_program(PDFLATEX NAMES pdflatex )
+ find_program(MAKEINDEX NAMES makeindex )
+@@ -126,7 +126,7 @@ configure_file(${PROJECT_SOURCE_DIR}/doc/doxyindexer.1      ${PROJECT_BINARY_DIR
+ 
+ # doc/language.doc (see tag Doxyfile:INPUT)
+ add_custom_command(
+-        COMMAND ${PYTHON_EXECUTABLE} translator.py ${PROJECT_SOURCE_DIR}
++        COMMAND ${Python_EXECUTABLE} translator.py ${PROJECT_SOURCE_DIR}
+         DEPENDS ${PROJECT_BINARY_DIR}/doc/maintainers.txt ${PROJECT_BINARY_DIR}/doc/language.tpl ${PROJECT_BINARY_DIR}/doc/translator.py
+         OUTPUT language.doc
+         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/doc
+@@ -135,7 +135,7 @@ set_source_files_properties(language.doc PROPERTIES GENERATED 1)
+ 
+ # doc/config.doc (see tag Doxyfile:INPUT)
+ add_custom_command(
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/src/configgen.py -doc ${TOP}/src/config.xml > config.doc
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/src/configgen.py -doc ${TOP}/src/config.xml > config.doc
+         DEPENDS ${TOP}/src/config.xml ${TOP}/src/configgen.py
+         OUTPUT config.doc
+         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/doc/
+diff --git a/ext/doxygen/examples/CMakeLists.txt b/ext/doxygen/examples/CMakeLists.txt
+index f8c030b..9a85aa8 100644
+--- a/ext/doxygen/examples/CMakeLists.txt
++++ b/ext/doxygen/examples/CMakeLists.txt
+@@ -51,189 +51,189 @@ add_custom_target(examples
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen class.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/class/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/class/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/class/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/class/latex/refman_doc.tex
+ 	DEPENDS doxygen class.h class.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/class/html/index.html ${PROJECT_BINARY_DIR}/html/examples/class/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen define.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/define/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/define/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/define/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/define/latex/refman_doc.tex
+ 	DEPENDS doxygen define.h define.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/define/html/index.html ${PROJECT_BINARY_DIR}/html/examples/define/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen enum.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/enum/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/enum/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/enum/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/enum/latex/refman_doc.tex
+ 	DEPENDS doxygen enum.h enum.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/enum/html/index.html ${PROJECT_BINARY_DIR}/html/examples/enum/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen file.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/file/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/file/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/file/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/file/latex/refman_doc.tex
+ 	DEPENDS doxygen file.h file.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/file/html/index.html ${PROJECT_BINARY_DIR}/html/examples/file/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen func.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/func/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/func/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/func/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/func/latex/refman_doc.tex
+ 	DEPENDS doxygen func.h func.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/func/html/index.html ${PROJECT_BINARY_DIR}/html/examples/func/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen page.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/page/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/page/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/page/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/page/latex/refman_doc.tex
+ 	DEPENDS doxygen page.doc page.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/page/html/index.html ${PROJECT_BINARY_DIR}/html/examples/page/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen relates.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/relates/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/relates/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/relates/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/relates/latex/refman_doc.tex
+ 	DEPENDS doxygen relates.cpp relates.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/relates/html/index.html ${PROJECT_BINARY_DIR}/html/examples/relates/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen author.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/author/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/author/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/author/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/author/latex/refman_doc.tex
+ 	DEPENDS doxygen author.cpp author.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/author/html/index.html ${PROJECT_BINARY_DIR}/html/examples/author/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen par.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/par/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/par/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/par/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/par/latex/refman_doc.tex
+ 	DEPENDS doxygen par.cpp par.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/par/html/index.html ${PROJECT_BINARY_DIR}/html/examples/par/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen overload.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/overload/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/overload/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/overload/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/overload/latex/refman_doc.tex
+ 	DEPENDS doxygen overload.cpp overload.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/overload/html/index.html ${PROJECT_BINARY_DIR}/html/examples/overload/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen example.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/example/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/example/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/example/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/example/latex/refman_doc.tex
+ 	DEPENDS doxygen example.cpp example_test.cpp example.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/example/html/index.html ${PROJECT_BINARY_DIR}/html/examples/example/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen include.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/include/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/include/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/include/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/include/latex/refman_doc.tex
+ 	DEPENDS doxygen include.cpp include_test.cpp include.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/include/html/index.html ${PROJECT_BINARY_DIR}/html/examples/include/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen qtstyle.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/qtstyle/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/qtstyle/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/qtstyle/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/qtstyle/latex/refman_doc.tex
+ 	DEPENDS doxygen qtstyle.cpp qtstyle.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/qtstyle/html/index.html ${PROJECT_BINARY_DIR}/html/examples/qtstyle/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen jdstyle.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/jdstyle/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/jdstyle/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/jdstyle/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/jdstyle/latex/refman_doc.tex
+ 	DEPENDS doxygen jdstyle.cpp jdstyle.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/jdstyle/html/index.html ${PROJECT_BINARY_DIR}/html/examples/jdstyle/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen structcmd.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/structcmd/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/structcmd/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/structcmd/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/structcmd/latex/refman_doc.tex
+ 	DEPENDS doxygen structcmd.h structcmd.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/structcmd/html/index.html ${PROJECT_BINARY_DIR}/html/examples/structcmd/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen autolink.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/autolink/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/autolink/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/autolink/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/autolink/latex/refman_doc.tex
+ 	DEPENDS doxygen autolink.cpp autolink.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/autolink/html/index.html ${PROJECT_BINARY_DIR}/html/examples/autolink/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen tag.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/tag/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/tag/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/tag/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/tag/latex/refman_doc.tex
+ 	DEPENDS doxygen tag.cpp tag.cfg ${PROJECT_BINARY_DIR}/html/examples/example/html/index.html ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/tag/html/index.html ${PROJECT_BINARY_DIR}/html/examples/tag/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen restypedef.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/restypedef/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/restypedef/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/restypedef/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/restypedef/latex/refman_doc.tex
+ 	DEPENDS doxygen restypedef.cpp restypedef.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/restypedef/html/index.html ${PROJECT_BINARY_DIR}/html/examples/restypedef/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen afterdoc.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/afterdoc/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/afterdoc/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/afterdoc/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/afterdoc/latex/refman_doc.tex
+ 	DEPENDS doxygen afterdoc.h afterdoc.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/afterdoc/html/index.html ${PROJECT_BINARY_DIR}/html/examples/afterdoc/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen templ.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/template/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/template/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/template/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/template/latex/refman_doc.tex
+ 	DEPENDS doxygen templ.cpp templ.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/template/html/index.html ${PROJECT_BINARY_DIR}/html/examples/template/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen group.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/group/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/group/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/group/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/group/latex/refman_doc.tex
+ 	DEPENDS doxygen group.cpp group.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/group/html/index.html ${PROJECT_BINARY_DIR}/html/examples/group/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen memgrp.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/memgrp/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/memgrp/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/memgrp/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/memgrp/latex/refman_doc.tex
+ 	DEPENDS doxygen memgrp.cpp memgrp.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/memgrp/html/index.html ${PROJECT_BINARY_DIR}/html/examples/memgrp/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen pyexample.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/pyexample/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/pyexample/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/pyexample/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/pyexample/latex/refman_doc.tex
+ 	DEPENDS doxygen pyexample.py pyexample.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/pyexample/html/index.html ${PROJECT_BINARY_DIR}/html/examples/pyexample/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen tclexample.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/tclexample/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/tclexample/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/tclexample/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/tclexample/latex/refman_doc.tex
+ 	DEPENDS doxygen tclexample.tcl tclexample.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/tclexample/html/index.html ${PROJECT_BINARY_DIR}/html/examples/tclexample/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen mux.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/mux/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/mux/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/mux/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/mux/latex/refman_doc.tex
+ 	DEPENDS doxygen mux.vhdl mux.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/mux/html/index.html ${PROJECT_BINARY_DIR}/html/examples/mux/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen manual.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/manual/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/manual/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/manual/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/manual/latex/refman_doc.tex
+ 	DEPENDS doxygen manual.c manual.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/manual/html/index.html ${PROJECT_BINARY_DIR}/html/examples/manual/latex/refman_doc.tex
+ )
+ 
+ add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen docstring.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/docstring/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/docstring/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/docstring/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/docstring/latex/refman_doc.tex
+ 	DEPENDS doxygen docstring.py docstring.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/docstring/html/index.html ${PROJECT_BINARY_DIR}/html/examples/docstring/latex/refman_doc.tex
+ )
+@@ -241,7 +241,7 @@ add_custom_command(
+ if (DOT)
+   add_custom_command(
+ 	COMMAND ${EXECUTABLE_OUTPUT_PATH}/doxygen diagrams.cfg
+-        COMMAND ${PYTHON_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/diagrams/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/diagrams/latex/refman_doc.tex
++        COMMAND ${Python_EXECUTABLE}  ${TOP}/examples/strip_example.py  < ${PROJECT_BINARY_DIR}/html/examples/diagrams/latex/refman.tex > ${PROJECT_BINARY_DIR}/html/examples/diagrams/latex/refman_doc.tex
+ 	DEPENDS doxygen diagrams_a.h diagrams_b.h diagrams_c.h diagrams_d.h diagrams_e.h diagrams.cfg ${TOP}/examples/strip_example.py
+ 	OUTPUT ${PROJECT_BINARY_DIR}/html/examples/diagrams/html/index.html ${PROJECT_BINARY_DIR}/html/examples/diagrams/latex/refman_doc.tex
+   )
+diff --git a/ext/doxygen/src/CMakeLists.txt b/ext/doxygen/src/CMakeLists.txt
+index 07a5454..3cbf466 100644
+--- a/ext/doxygen/src/CMakeLists.txt
++++ b/ext/doxygen/src/CMakeLists.txt
+@@ -38,7 +38,7 @@ set_source_files_properties(${GENERATED_SRC}/version.cpp PROPERTIES GENERATED 1)
+ 
+ # configvalues.h
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configvalues.h
+ )
+@@ -46,7 +46,7 @@ set_source_files_properties(${GENERATED_SRC}/configvalues.h PROPERTIES GENERATED
+ 
+ # configvalues.cpp
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maps ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.cpp
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maps ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.cpp
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configvalues.cpp
+ )
+@@ -54,7 +54,7 @@ set_source_files_properties(${GENERATED_SRC}/configvalues.cpp PROPERTIES GENERAT
+ 
+ # configoptions.cpp
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -cpp ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configoptions.cpp
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -cpp ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configoptions.cpp
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configoptions.cpp
+ )
+@@ -85,7 +85,7 @@ file(GLOB RESOURCES ${PROJECT_SOURCE_DIR}/templates/*/*)
+ # resources.cpp
+ add_custom_command(
+     COMMENT  "Generating ${GENERATED_SRC}/resources.cpp"
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/res2cc_cmd.py ${PROJECT_SOURCE_DIR}/templates ${GENERATED_SRC}/resources.cpp
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/res2cc_cmd.py ${PROJECT_SOURCE_DIR}/templates ${GENERATED_SRC}/resources.cpp
+     DEPENDS ${RESOURCES}
+     OUTPUT ${GENERATED_SRC}/resources.cpp
+ )
+@@ -93,7 +93,7 @@ set_source_files_properties(${GENERATED_SRC}/resources.cpp PROPERTIES GENERATED
+ 
+ # layout_default.xml
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/to_c_cmd.py < ${PROJECT_SOURCE_DIR}/src/layout_default.xml > ${GENERATED_SRC}/layout_default.xml.h
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/to_c_cmd.py < ${PROJECT_SOURCE_DIR}/src/layout_default.xml > ${GENERATED_SRC}/layout_default.xml.h
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/layout_default.xml
+     OUTPUT  ${GENERATED_SRC}/layout_default.xml.h
+ )
+diff --git a/ext/doxygen/testing/CMakeLists.txt b/ext/doxygen/testing/CMakeLists.txt
+index c0679ab..528ea21 100644
+--- a/ext/doxygen/testing/CMakeLists.txt
++++ b/ext/doxygen/testing/CMakeLists.txt
+@@ -1,10 +1,10 @@
+ if(NOT DISABLE_DOXYGEN_TESTS)
+ add_custom_target(tests
+          COMMENT "Running doxygen tests..."
+-	 COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/testing/runtests.py --doxygen ${PROJECT_BINARY_DIR}/bin/doxygen --inputdir ${PROJECT_SOURCE_DIR}/testing --outputdir ${PROJECT_BINARY_DIR}/testing
++	 COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/testing/runtests.py --doxygen ${PROJECT_BINARY_DIR}/bin/doxygen --inputdir ${PROJECT_SOURCE_DIR}/testing --outputdir ${PROJECT_BINARY_DIR}/testing
+          DEPENDS doxygen
+ )
+ add_test(NAME suite
+-	COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/testing/runtests.py --doxygen $<TARGET_FILE:doxygen> --inputdir ${PROJECT_SOURCE_DIR}/testing --outputdir ${PROJECT_BINARY_DIR}/testing
++	COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/testing/runtests.py --doxygen $<TARGET_FILE:doxygen> --inputdir ${PROJECT_SOURCE_DIR}/testing --outputdir ${PROJECT_BINARY_DIR}/testing
+ )
+ endif()
+diff --git a/ext/doxygen/vhdlparser/CMakeLists.txt b/ext/doxygen/vhdlparser/CMakeLists.txt
+index 154e478..67f4835 100644
+--- a/ext/doxygen/vhdlparser/CMakeLists.txt
++++ b/ext/doxygen/vhdlparser/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ # configvalues.h
+ add_custom_command(
+-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
++    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/configgen.py -maph ${PROJECT_SOURCE_DIR}/src/config.xml > ${GENERATED_SRC}/configvalues.h
+     DEPENDS ${PROJECT_SOURCE_DIR}/src/config.xml ${PROJECT_SOURCE_DIR}/src/configgen.py
+     OUTPUT ${GENERATED_SRC}/configvalues.h
+ )

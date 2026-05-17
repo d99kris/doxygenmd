@@ -1,9 +1,9 @@
 # Project
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14...3.22 FATAL_ERROR)
 project(doxygenmd)
 
 # Doxygen
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/share/doxygenmd/bin)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/share/doxygenmd/bin)
 set(DISABLE_DOXYGEN_TESTS 1)
 add_subdirectory(ext/doxygen)
 
